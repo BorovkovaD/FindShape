@@ -1,8 +1,55 @@
-#include <QMap>
+#include <map>
 #include <opencv2/highgui.hpp>
 
 using cv::Mat;
+using namespace std;
+
+//1) верни структуру для линии
 struct lineStruct
+{
+    int radius;
+    int angle;
+}
+
+//2) создай map пустой вне функции
+
+map<lineStruct,int> mymap;
+
+//....
+void hough_line(Mat& inputImg)
+{
+    //3) Цикл (1) по всем элементам map
+    for (auto& x: mymap) {
+
+    //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
+        if (x.first.radius == radius && x.first.angle == angle)
+        {
+            ++x.second;
+        }
+
+        //5) в теле цикла 1 добавляй новые записи в map, если линии с заданным R и углом не существует
+        else
+        {
+            lineStruct tempLine;
+            tempLine.radius = radius;
+            tempLine.angle = angle;
+            mymap.insert ( std::pair<lineStruct,int>(tempLine, 1) );
+        }
+
+    //6) Конец цикла (1)
+    }
+    int minPoints = 5;
+    //7) Цикл (2) по всем элементам map
+    for (auto& x: mymap) {
+
+        //8) в теле цикла (2) проверяй, что значение counter больше определенного minPoints (minPoints - целое число, параметр функции) и сохраняй/рисуй линию
+        if (x.first.counter > minPoints)
+        {
+            line (...);
+        }
+    }
+}
+/*struct lineStruct
 {
     int radius;
     int angle;
@@ -20,11 +67,11 @@ int getPix(int x, int y, Mat& inputImg)
     assert (y < inputImg.size().width);
     return ptr[x * inputImg.cols + y ];
 }
-QMap <lineStruct, int> lineCounter;
+map <lineStruct, int> lineCounter;
 void increase_counter(int radius, int angle)
 {
     /// @todo написать
-    QMap::iterator i = lineCounter.find((lineStruct.radius, lineStruct.angle));
+    map::iterator i = lineCounter.find((lineStruct.radius, lineStruct.angle));
     //int counter = lineCounter((radius,angle)) ;
     &lineCounter[i] ++;
 
@@ -63,4 +110,4 @@ void hough_line(Mat& inputImg)
     }
     /// 6) параметры прямой, проходящей через максимальное число точек принять равным
     ///    координатам центра выбранной ячейки в фазовом пространстве
-}
+}*/
