@@ -1,5 +1,5 @@
-#include <map>
-#include <opencv2/highgui.hpp>
+#include "hough.h"
+#include <QDebug>
 
 using cv::Mat;
 using namespace std;
@@ -9,46 +9,103 @@ struct lineStruct
 {
     int radius;
     int angle;
-}
+    cv::Point point1;
+    cv::Point point2;
+    bool operator<(const lineStruct& other) const
+    {
+        return radius < other.radius;
+    }
+    bool operator==(const lineStruct& other) const
+    {
+        return radius == other.radius;
+    }
+};
 
 //2) создай map пустой вне функции
 
 map<lineStruct,int> mymap;
 
+int getPix(int x, int y, Mat& inputImg)
+{
+    /// @todo написать
+    uint8_t* ptr = (uint8_t*)inputImg.data;
+    assert (x < inputImg.size().width);
+    assert (y < inputImg.size().height);
+    return ptr[y * inputImg.cols + x ];
+}
+
 //....
 void hough_line(Mat& inputImg)
 {
-    //3) Цикл (1) по всем элементам map
-    for (auto& x: mymap) {
+    /// 0) размеры ячейки
+    int h;
+    int w;
+    int q = 5;
 
-    //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
-        if (x.first.radius == radius && x.first.angle == angle)
-        {
-            ++x.second;
+    /// 1) обнулить счетчики всех ячеек;
+    lineStruct temp;
+    temp.radius = 0;
+    temp.angle = 0;
+    mymap[temp]=0;
+    /// 2) для каждой точки интереса:
+    for (int y = 0; y < inputImg.size().height; y++){
+        for (int x = 0; x < inputImg.size().width; x++){
+            //qDebug()<<x<<y;
+            if (getPix(x, y, inputImg) > 0){
+                /// 3) для каждой прямой (x*cos a + y*sin a = r), проходящей через данную точку:
+                //for (int radius = 0; radius < 1000; radius++){
+                    for (int angle = 0; angle < 360; angle++){
+                        int radius = x*cos(angle) + y*sin(angle);
+
+                        //3) Цикл (1) по всем элементам map
+                        for (auto& m: mymap) {
+                            //qDebug()<<x<<y<<angle;
+                        //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
+                            if (m.first.radius == radius && m.first.angle == angle)
+                            {
+                                ++m.second;
+                            }
+
+                            //5) в теле цикла 1 добавляй новые записи в map, если линии с заданным R и углом не существует
+                            else
+                            {
+                                lineStruct tempLine;
+                                tempLine.radius = radius;
+                                tempLine.angle = angle;
+                                mymap.insert ( std::pair<lineStruct,int>(tempLine, 1) );
+                            }
+
+                        //6) Конец цикла (1)
+                        }
+                    }
+                }
+            }
         }
-
-        //5) в теле цикла 1 добавляй новые записи в map, если линии с заданным R и углом не существует
-        else
-        {
-            lineStruct tempLine;
-            tempLine.radius = radius;
-            tempLine.angle = angle;
-            mymap.insert ( std::pair<lineStruct,int>(tempLine, 1) );
-        }
-
-    //6) Конец цикла (1)
-    }
+    qDebug()<<"1";
     int minPoints = 5;
+    IplImage tmp=inputImg;
     //7) Цикл (2) по всем элементам map
     for (auto& x: mymap) {
 
         //8) в теле цикла (2) проверяй, что значение counter больше определенного minPoints (minPoints - целое число, параметр функции) и сохраняй/рисуй линию
-        if (x.first.counter > minPoints)
+        if (x.second > minPoints)
         {
-            line (...);
+            for(int t = 0; t<inputImg.rows;t++)
+            {
+                qDebug()<<t;
+                int y = (x.first.radius - t*cos(x.first.angle))/sin(x.first.angle);
+                CvPoint pointa(t,y);
+                t++;
+                y = (x.first.radius - t*cos(x.first.angle))/sin(x.first.angle);
+                CvPoint pointb(t,y);
+                cvLine(&tmp,pointa,pointb,255,4,cv::LINE_8,0);
+            }
         }
     }
+    cvShowImage("image", &tmp);
 }
+
+
 /*struct lineStruct
 {
     int radius;
