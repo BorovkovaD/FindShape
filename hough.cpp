@@ -59,7 +59,6 @@ void hough_line(Mat& inputImg)
 
                         //3) Цикл (1) по всем элементам map
                         for (auto& m: mymap) {
-                            //qDebug()<<x<<y<<angle;
                         //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
                             if (m.first.radius == radius && m.first.angle == angle)
                             {
@@ -81,7 +80,6 @@ void hough_line(Mat& inputImg)
                 }
             }
         }
-    qDebug()<<"1";
     int minPoints = 5;
     IplImage tmp=inputImg;
     //7) Цикл (2) по всем элементам map
