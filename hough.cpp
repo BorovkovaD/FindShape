@@ -90,16 +90,11 @@ void hough_line(Mat& inputImg)
         //8) в теле цикла (2) проверяй, что значение counter больше определенного minPoints (minPoints - целое число, параметр функции) и сохраняй/рисуй линию
         if (x.second > minPoints)
         {
-            for(int t = 0; t<inputImg.rows;t++)
-            {
-                qDebug()<<t;
-                int y = (x.first.radius - t*cos(x.first.angle))/sin(x.first.angle);
-                CvPoint pointa(t,y);
-                t++;
-                y = (x.first.radius - t*cos(x.first.angle))/sin(x.first.angle);
-                CvPoint pointb(t,y);
-                cvLine(&tmp,pointa,pointb,255,4,cv::LINE_8,0);
-            }
+                int y = (x.first.radius/sin(x.first.angle));
+                CvPoint pointa(0,y);
+                y = (x.first.radius - inputImg.rows*cos(x.first.angle))/sin(x.first.angle);
+                CvPoint pointb(inputImg.rows,y);
+                cvLine(&tmp,pointa,pointb,255,1,cv::LINE_8,0);
         }
     }
     cvShowImage("image", &tmp);
