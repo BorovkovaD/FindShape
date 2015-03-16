@@ -35,7 +35,7 @@ int getPix(int x, int y, Mat& inputImg)
 }
 
 //....
-void hough_line(Mat& inputImg)
+void hough_line(Mat& inputImg, Mat& inputImg1)
 {
     /// 0) размеры ячейки
     int h;
@@ -62,8 +62,24 @@ void hough_line(Mat& inputImg)
                         //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
                             if (m.first.radius == radius && m.first.angle == angle)
                             {
-                                ++m.second;
+                                //++m.second;
                                 flag = 1;
+                                //if (m.first.point2.y<=y)
+                                //{
+                                lineStruct tempLine;
+                                tempLine.radius = radius;
+                                tempLine.angle = angle;
+                                cv::Point point(x,y);
+                                tempLine.point2 = m.first.point2;
+                                tempLine.point1 = m.first.point1;
+                                auto result = mymap.find(tempLine);
+                                mymap.erase(result);
+                                tempLine.point2 = point;
+                                mymap.insert ( pair<lineStruct,int>(tempLine, 1) );
+                                    //m.first.point2 = point;
+                                    //m.first.point2.x = x;
+                                    //m.first.point2.y = y;
+                                //}
                                 break;
                             }
                         }
@@ -73,6 +89,8 @@ void hough_line(Mat& inputImg)
                                 lineStruct tempLine;
                                 tempLine.radius = radius;
                                 tempLine.angle = angle;
+                                cv::Point point(x,y);
+                                tempLine.point1 = point;
                                 mymap.insert ( pair<lineStruct,int>(tempLine, 1) );
                         }
 
@@ -82,19 +100,20 @@ void hough_line(Mat& inputImg)
                 }
             }
 
-    int minPoints = 5;
-    IplImage tmp=inputImg;
+    int minPoints = 15;
+    IplImage tmp=inputImg1;
     //7) Цикл (2) по всем элементам map
     for (auto& x: mymap) {
 
         //8) в теле цикла (2) проверяй, что значение counter больше определенного minPoints (minPoints - целое число, параметр функции) и сохраняй/рисуй линию
         if (x.second > minPoints)
         {
-                int y = (x.first.radius/sin(x.first.angle));
-                CvPoint pointa(0,y);
-                y = (x.first.radius - inputImg.rows*cos(x.first.angle))/sin(x.first.angle);
-                CvPoint pointb(inputImg.rows,y);
-                cvLine(&tmp,pointa,pointb,255,1,cv::LINE_8,0);
+                //int y = (x.first.radius/sin(x.first.angle));
+                //CvPoint pointa(0,y);
+                //y = (x.first.radius - inputImg.rows*cos(x.first.angle))/sin(x.first.angle);
+                //CvPoint pointb(inputImg.rows,y);
+
+                cvLine(&tmp,x.first.point1,x.first.point2,127,2,cv::LINE_8,0);
         }
     }
     cvShowImage("image", &tmp);
