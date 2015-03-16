@@ -54,32 +54,34 @@ void hough_line(Mat& inputImg)
             if (getPix(x, y, inputImg) > 0){
                 /// 3) для каждой прямой (x*cos a + y*sin a = r), проходящей через данную точку:
                 //for (int radius = 0; radius < 1000; radius++){
-                    for (int angle = 0; angle < 360; angle++){
+                    for (int angle = 0; angle < 180; angle++){
                         int radius = x*cos(angle) + y*sin(angle);
-
+                        int flag = 0;
                         //3) Цикл (1) по всем элементам map
                         for (auto& m: mymap) {
                         //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
                             if (m.first.radius == radius && m.first.angle == angle)
                             {
                                 ++m.second;
+                                flag = 1;
+                                break;
                             }
-
+                        }
                             //5) в теле цикла 1 добавляй новые записи в map, если линии с заданным R и углом не существует
-                            else
-                            {
+                        if (flag == 0)
+                        {
                                 lineStruct tempLine;
                                 tempLine.radius = radius;
                                 tempLine.angle = angle;
-                                mymap.insert ( std::pair<lineStruct,int>(tempLine, 1) );
-                            }
+                                mymap.insert ( pair<lineStruct,int>(tempLine, 1) );
+                        }
 
                         //6) Конец цикла (1)
                         }
                     }
                 }
             }
-        }
+
     int minPoints = 5;
     IplImage tmp=inputImg;
     //7) Цикл (2) по всем элементам map
