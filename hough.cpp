@@ -52,19 +52,17 @@ void hough_line(Mat& inputImg, Mat& inputImg1)
     /// 2) для каждой точки интереса:
     for (int y = 0; y < inputImg.size().height; y++){
         for (int x = 0; x < inputImg.size().width; x++){
-            //qDebug()<<x<<y;
             if (getPix(x, y, inputImg) > 0){
                 /// 3) для каждой прямой (x*cos a + y*sin a = r), проходящей через данную точку:
-                //for (int radius = 0; radius < 1000; radius++){
                     for (int angle = 0; angle < 180; angle++){
-                        int radius = x*cos(angle*PI/180) + y*sin(angle*PI/180);
+                        int radius = x*cos(angle*PI/180.0) + y*sin(angle*PI/180.0);
                         int flag = 0;
                         //3) Цикл (1) по всем элементам map
                         for (auto& m: mymap) {
                         //4) в теле цикла 1 увеличивай счетчик, если линии с заданным радиусом и углом уже существует
-                            if (m.first.radius == radius && m.first.angle == angle && (sqrt((y-m.first.point2.y)*(y-m.first.point2.y)+(x-m.first.point2.x)*(x-m.first.point2.x))<=20))
+                            if ((m.first.radius == radius) && (m.first.angle == angle) && (sqrt((y-m.first.point2.y)*(y-m.first.point2.y)+(x-m.first.point2.x)*(x-m.first.point2.x))<=4))
                             {
-                                //++m.second;
+                                ++m.second;
                                 flag = 1;
                                 if (m.first.point2.y<=y)
                                 {
@@ -72,11 +70,8 @@ void hough_line(Mat& inputImg, Mat& inputImg1)
                                     lineStruct tempLine = m.first;
                                     tempLine.point2 = point;
                                     mymap.erase(m.first);
-                                    mymap.insert ( pair<lineStruct,int>(tempLine, ++m.second) );
-                                    qDebug()<<x<<y<<m.second;
-                                    //m.first.point2 = point;
-                                    //m.first.point2.x = x;
-                                    //m.first.point2.y = y;
+                                    mymap.insert ( pair<lineStruct,int>(tempLine, m.second) );
+                                    //qDebug()<<x<<y<<m.second;
                                 }
                                 break;
                             }
@@ -89,6 +84,7 @@ void hough_line(Mat& inputImg, Mat& inputImg1)
                                 tempLine.angle = angle;
                                 cv::Point point(x,y);
                                 tempLine.point1 = point;
+                                tempLine.point2 = point;
                                 mymap.insert ( pair<lineStruct,int>(tempLine, 1) );
                         }
 
@@ -98,7 +94,7 @@ void hough_line(Mat& inputImg, Mat& inputImg1)
                 }
             }
 
-    int minPoints = 15;
+    int minPoints = 5;
 
     //7) Цикл (2) по всем элементам map
     for (auto& x: mymap) {
@@ -111,7 +107,7 @@ void hough_line(Mat& inputImg, Mat& inputImg1)
                 //y = (x.first.radius - inputImg.rows*cos(x.first.angle))/sin(x.first.angle);
                 //CvPoint pointb(inputImg.rows,y);
 
-                cv::line(inputImg1,x.first.point1,x.first.point2,cv::Scalar(0,255,0),2,cv::LINE_8,0);
+                cv::line(inputImg1,x.first.point2,x.first.point1,cv::Scalar(0,255,0),2,cv::LINE_8,0);
         }
     }
     imshow("image", inputImg1);
