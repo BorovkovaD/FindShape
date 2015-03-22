@@ -10,7 +10,6 @@
 #include <string.h>
 #include <math.h>
 #include <QDebug>
-#include "function.h"
 
 using namespace cv;
 using namespace std;
@@ -22,19 +21,13 @@ using namespace std;
 */
 class Hough
 {
-    //для хранения точек
-    vector<Point> pts;
-    int i , j, theta, height, width; /**< переменные циклов и вспомогательные переменные */
-    Mat HoughAccumulator;
-    Mat HoughTransform(Mat &input,vector<Point> pts);
-    void FindLines(Mat& img,vector<Point>& pts);
-    void drawLines(Mat& img,vector<Point>& par,vector<Point>& pts,int gap);
-    void Threshold (Mat& input, Mat& output, double threshold_val);
-    void normal (Mat& input);
+    void FindRectangle();
 public:
-    Function f;
+    Mat FindCircle();
+    Mat FindTriangle();
     cv::Mat img; /**< изображение*/
-    Mat start();
+    cv::Mat img1; /**< изображение*/
+    void start();
     Hough();
 };
 

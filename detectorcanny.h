@@ -15,6 +15,8 @@
 using namespace cv;
 using namespace std;
 
+#define maxWin  100 /**< максимальный размер окна*/
+#define maxDim  4096 /**< максимальный линейный размер рисунка*/
 
 /**
 @class DetectorCanny
@@ -22,8 +24,24 @@ using namespace std;
 */
 class DetectorCanny
 {
-    int i , j , height, width; /**< переменные циклов и вспомогательные переменные */
+    /**< структура для хранения пикселя*/
+    int N; /**< ???*/
+    float window[2*maxWin]; /**< окно */
+    int i , j , k , l, height, width; /**< переменные циклов и вспомогательные переменные */
+    float sum; /**< сумма элементов окна , для нормализации */
+    float s2; /**< 2 * sigma * sigma */
+    float tmp[maxDim]; /**< временный массив для формирования строки/столбца */
+    float pix; /**< текущий пиксель */
+    float p; /**< ещё один пиксель для итерации */
 private:
+
+    /**
+      * @brief Метод, размывающий изображение
+      * @param sigma - параметр размытия
+      * @param input – ссылка на исходное изображение
+      * @param output - ссылка на обработанное изображение
+      */
+    void GaussianFilterOperator (float sigma, Mat input, Mat& output);
 
     /**
       * @brief Метод, переводящий трёхканальное изображение в одноканальное
@@ -58,7 +76,7 @@ private:
 
 public:
     Function f;
-    Mat start();
+    Mat start(int sigma);
     cv::Mat img; /**< изображение*/
     /// @brief Конструктор по умолчанию
     DetectorCanny(string);

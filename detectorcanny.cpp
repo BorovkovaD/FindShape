@@ -16,13 +16,12 @@ DetectorCanny::~DetectorCanny()
     //удалить картинку
 }
 
-Mat DetectorCanny::start()
+Mat DetectorCanny::start(int sigma)
 {
-    imshow("original", img);
-    Mat img_gray (img.rows, img.cols, CV_8UC1, Scalar(255));
+    Mat img_gray (img.rows, img.cols, CV_8UC1, Scalar(0));
     RGB2GRAY(img, img_gray);
     Mat img_gaus (img_gray.rows, img_gray.cols, CV_8UC1, Scalar(0));
-    f.GaussianFilterOperator (1, img_gray, img_gaus);
+    GaussianFilterOperator (sigma, img_gray, img_gaus);
     Mat img_sobel (img_gaus.rows, img_gaus.cols, CV_8UC1, Scalar(0));
     SobelOperator(img_gaus, img_sobel);
     Mat img_double (img_sobel.rows, img_sobel.cols, CV_8UC1, Scalar(0));
@@ -30,6 +29,82 @@ Mat DetectorCanny::start()
     Mat img_canny (img_double.rows, img_double.cols, CV_8UC1, Scalar(0));
     BlobAnalysis(img_double, img_canny);
     return img_canny;
+}
+
+void DetectorCanny::GaussianFilterOperator (float sigma, Mat input, Mat& output)
+{
+    assert( input.channels() == output.channels() );
+    assert (sigma >= 0);
+    height = input.rows;
+    width = input.cols;
+    s2 = 2 * sigma * sigma;
+    /* размер окна по " правилу трёх сигм" */
+    N = ceil (3 * sigma );
+    /* центральный элемент окна пока будет exp ( 0 ) = 1 */
+    window[maxWin] = 1;
+    /* инициализация окна */
+    for ( i = 1;  i<= N; i++)
+    {
+        window[maxWin+i]= exp(-i*i/s2);
+        window[maxWin-i]= window[maxWin-i];
+    }
+    /* первый проход - горизонтальное размытие */
+    for ( i = 0; i < height; i++)
+    {
+        for ( j = 0; j < width; j++)
+        {
+            /* будем вычислять сумму использованных коэффициентов
+            для нормализации; это нужно делать каждый раз
+            потому что для размытия крайних пикселей
+            используется только часть окна */
+            double sum = 0;
+            /* это[i , j] пиксель который будем формировать */
+            pix = 0;
+            /* проходимся окном вокруг этого пикселя */
+            for ( k = maxWin-N; k <= maxWin+N; k++){
+                /* l - индекс другого пикселя ,
+                который вносит вклад */
+                l = j + k-maxWin-N;
+                if (( l >= 0 ) && ( l < width )) {
+                    f.GetPix( i , l , p , input);
+                    pix += ( p * window[k] );
+                    sum += window[k];
+                }
+            }
+            /* нормализация - сумма использованных коэффициентов
+            окна должна быть равна 1 */
+            pix /= sum;
+            /* пиксель готов - сохраняем во временный массив */
+            tmp[j]= pix;
+        }
+        /* строка готова - сохраняем временный массив
+        в само изображение */
+        for ( j = 0; j < width; j++)
+            f.SetPix ( i , j , tmp[j], output );
+    }
+    /* второй проход - вертикальное размытие */
+    for ( j = 0; j < width; j++)
+    {
+        for ( i = 0; i < height; i++)
+        {
+            double sum = 0;
+            pix = 0;
+            for ( k = maxWin-N; k <= maxWin+N; k++){
+                /* отличие в том, что итерация теперь будет
+                не по строке , а по столбцу */
+                l = i + k-maxWin-N;
+                if (( l >= 0 ) && ( l < height )) {
+                    f.GetPix( l , j , p, output);
+                    pix += p * window[k];
+                    sum += window[k];
+                }
+            }
+            pix /= sum;
+            tmp[i]= pix;
+        }
+        for ( i = 0; i < height; i++)
+            f.SetPix ( i , j , tmp[i], output );
+    }
 }
 
 void DetectorCanny::RGB2GRAY(Mat& input, Mat &output)
@@ -77,27 +152,28 @@ void DetectorCanny::SobelOperator(Mat& input, Mat& output)
         {
                 Gx = (pixelPtrIN[(i+1)*width + (j-1)]+2*pixelPtrIN[(i+1)*width + j]+pixelPtrIN[(i+1)*width + (j+1)])-(pixelPtrIN[(i-1)*width + (j-1)]+2*pixelPtrIN[(i-1)*width + j]+pixelPtrIN[(i-1)*width + (j+1)]);
                 Gy = (pixelPtrIN[(i-1)*width + (j+1)]+2*pixelPtrIN[i*width + (j+1)]+pixelPtrIN[(i+1)*width + (j+1)])-(pixelPtrIN[(i-1)*width + (j-1)]+2*pixelPtrIN[i*width + (j-1)]+pixelPtrIN[(i+1)*width + (j-1)]);
-                Gradient[i][j] = sqrt(abs(Gx*Gx+Gy*Gy));
+                Gradient[i][j] = sqrt(Gx*Gx+Gy*Gy);
                 double angle = atan2(Gy,Gx);
                 /* перевод угла в пространство [0, PI] */
                 Angle[i][j] = angle < 0 ? angle + CV_PI : angle;
-                //SetPix(j,i,pix,output);
         }
     for(i = 1; i < height-1; i++)
         for(j = 1; j < width-1; j++)
         {
             /* округляем угол к  3*PI/4*/
-            if(Angle[i][j]<=3*CV_PI/4+CV_PI/8 && Angle[i][j]>=3*CV_PI/4-CV_PI/8)
+            if(abs(3*CV_PI/4 - Angle[i][j])<=CV_PI/8)
                 Angle[i][j]=3;
             else
             {
                 /* округляем угол к  PI/4*/
-                if(Angle[i][j]<=CV_PI/4+CV_PI/8 && Angle[i][j]>=CV_PI/4-CV_PI/8)
+                if(abs(CV_PI/4 - Angle[i][j])<=CV_PI/8)
+                //if(Angle[i][j]<=CV_PI/4+CV_PI/8 && Angle[i][j]>=CV_PI/4-CV_PI/8)
                     Angle[i][j]=1;
                 else
                 {
                     /* округляем угол к  PI/2*/
-                    if (Angle[i][j]<=CV_PI/2+CV_PI/8 && Angle[i][j]>=CV_PI/2-CV_PI/8)
+                    if(abs(CV_PI/2 - Angle[i][j])<CV_PI/8)
+                    //if (Angle[i][j]<=CV_PI/2+CV_PI/8 && Angle[i][j]>=CV_PI/2-CV_PI/8)
                         Angle[i][j]=2;
                     else
                     {
@@ -112,46 +188,35 @@ void DetectorCanny::SobelOperator(Mat& input, Mat& output)
     {
         for(j = 1; j < width-1; j++)
         {
-            f.pix.r = 0;
-            f.pix.g = 0;
-            f.pix.b = 0;
+            pix = 0;
             /* если точка лежит на горизонтальной границе и является максимумом*/
             if((Angle[i][j]==0) && (Gradient[i][j]>Gradient[i-1][j]) && (Gradient[i][j]>Gradient[i+1][j]))
             {
-                f.pix.r = Gradient[i][j];
-                f.SetPix(i,j,f.pix,output);
+                pix = Gradient[i][j];
+                f.SetPix(i,j,pix,output);
+            }
+            /* если точка лежит на границе PI/4 и является максимумом*/
+            else if ((Angle[i][j]==1) && (Gradient[i][j]>Gradient[i-1][j-1]) && (Gradient[i][j]>Gradient[i+1][j+1]))
+            {
+                pix = Gradient[i][j];
+                f.SetPix(i,j,pix,output);
+            }
+            /* если точка лежит на вертикальной границе и является максимумом*/
+            else if ((Angle[i][j]==2) && (Gradient[i][j]>Gradient[i][j-1]) && (Gradient[i][j]>Gradient[i][j+1]))
+            {
+                pix = Gradient[i][j];
+                f.SetPix(i,j,pix,output);
+            }
+            /* если точка лежит на границе 3*PI/4 и является максимумом*/
+            else if ((Angle[i][j]==3) && (Gradient[i][j]>Gradient[i-1][j+1]) && (Gradient[i][j]>Gradient[i+1][j-1]))
+            {
+                pix = Gradient[i][j];
+                f.SetPix(i,j,pix,output);
             }
             else
             {
-                /* если точка лежит на границе PI/4 и является максимумом*/
-                if ((Angle[i][j]==1) && (Gradient[i][j]>Gradient[i-1][j-1]) && (Gradient[i][j]>Gradient[i+1][j+1]))
-                {
-                    f.pix.r = Gradient[i][j];
-                    f.SetPix(i,j,f.pix,output);
-                }
-                else
-                {
-                    /* если точка лежит на вертикальной границе и является максимумом*/
-                    if ((Angle[i][j]==2) && (Gradient[i][j]>Gradient[i][j-1]) && (Gradient[i][j]>Gradient[i][j+1]))
-                    {
-                        f.pix.r = Gradient[i][j];
-                        f.SetPix(i,j,f.pix,output);
-                    }
-                    else
-                    {
-                        /* если точка лежит на границе 3*PI/4 и является максимумом*/
-                        if ((Angle[i][j]==3) && (Gradient[i][j]>Gradient[i-1][j+1]) && (Gradient[i][j]>Gradient[i+1][j-1]))
-                        {
-                            f.pix.r = Gradient[i][j];
-                            f.SetPix(i,j,f.pix,output);
-                        }
-                        else
-                        {
-                            f.pix.r = 0;
-                            f.SetPix(i,j,f.pix,output);
-                        }
-                    }
-                }
+                pix = 0;
+                f.SetPix(i,j,pix,output);
             }
         }
     }
@@ -166,9 +231,7 @@ void DetectorCanny::DoubleThresholding(double low_pr, double high_pr, Mat& input
     double up = high_pr*255;
     height = input.rows;
     width = input.cols;
-    f.pix.r = 0;
-    f.pix.g = 0;
-    f.pix.b = 0;
+    pix = 0;
     for(i = 0; i < height; i++)
         for(j = 0; j < width; j++)
         {
@@ -176,22 +239,22 @@ void DetectorCanny::DoubleThresholding(double low_pr, double high_pr, Mat& input
              * то он принимает максимальное значение*/
             if(pixelPtrIN[i*width + j] >= up)
             {
-                f.pix.r = 255;
-                f.SetPix(i,j,f.pix,output);
+                pix = 255;
+                f.SetPix(i,j,pix,output);
             }
             /* если значение пикселя ниже нижней границы,
              * то он подавляется*/
             else if (pixelPtrIN[i*width + j] <= down)
                 {
-                    f.pix.r = 0;
-                    f.SetPix(i,j,f.pix,output);
+                    pix = 0;
+                    f.SetPix(i,j,pix,output);
                 }
             /* если значение пикселя между границ,
              * то он принимает среднее значение*/
             else
                 {
-                    f.pix.r = 127;
-                    f.SetPix(i,j,f.pix,output);
+                    pix = 127;
+                    f.SetPix(i,j,pix,output);
                 }
         }
 }
@@ -200,76 +263,72 @@ void DetectorCanny::BlobAnalysis(Mat& input, Mat& output)
 {
     height = input.rows;
     width = input.cols;
-    f.pix.r = 0;
-    f.pix.g = 0;
-    f.pix.b = 0;
-    f.p.r = 0;
-    f.p.g = 0;
-    f.p.b = 0;
+    pix = 0;
+    p = 0;
     for(i = 1; i < height-1; i++)
         for(j = 1; j < width-1; j++)
         {
-            f.GetPix( i , j , f.p , input);
+            f.GetPix( i , j , p , input);
             /* если пиксель лежит на границе*/
-            if(f.p.r>0)
+            if(p>0)
             {
                 /* проверяем соседние пиксели,
                  * если пиксель принадлежит группе пикселей, то сохраняем его
                  * иначе подавляем его*/
-                f.GetPix( i-1 , j-1 , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i-1 , j-1 , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i-1 , j , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i-1 , j , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i-1 , j+1 , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i-1 , j+1 , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i , j+1 , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i , j+1 , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i+1 , j+1 , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i+1 , j+1 , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i+1 , j , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i+1 , j , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i+1 , j-1 , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i+1 , j-1 , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
-                f.GetPix( i , j-1 , f.p , input);
-                if(f.p.r>0)
+                f.GetPix( i , j-1 , p , input);
+                if(p>0)
                 {
-                    f.GetPix( i , j , f.pix , input);
-                    f.SetPix(i,j,f.pix,output);
+                    f.GetPix( i , j , pix , input);
+                    f.SetPix(i,j,pix,output);
                     continue;
                 }
             }
