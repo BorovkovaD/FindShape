@@ -11,9 +11,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = FindShapePro
 TEMPLATE = app
 
-#DEPENDPATH += C:\Qt\build-FindShape-Qt_4_8_5_MinGW-Debug\dist
-#INCLUDEPATH +=  C:\Qt\build-FindShape-Qt_4_8_5_MinGW-Debug\dist
-#LIBS+=  C:\Qt\build-FindShape-Qt_4_8_5_MinGW-Debug\dist\debug -ltestLib
 INCLUDEPATH += C:\OpenCV\opencv_bin\install\include
 LIBS += -L"C:\OpenCV\opencv_bin\install\x64\mingw\bin"
 LIBS += -lopencv_calib3d300 -lopencv_core300 -lopencv_features2d300 -lopencv_flann300 \

@@ -21,14 +21,20 @@ using namespace std;
 */
 class Hough
 {
-    void FindRectangle();
 public:
+    /**
+      * @brief Метод, поиска кругов
+      */
     Mat FindCircle();
-    Mat FindTriangle();
-    cv::Mat img; /**< изображение*/
-    cv::Mat img1; /**< изображение*/
+    /**
+      * @brief Метод, поиска линий
+      */
+    Mat FindLines();
+    cv::Mat img; /**< изображение Canny*/
+    cv::Mat img1; /**< изображение для результата*/
     void start();
     Hough();
+    ~Hough();
 };
 
 #endif // HOUGH_H

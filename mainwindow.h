@@ -15,7 +15,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     QBrush *brush;
     QPalette *palette;
-
+    int flag = 0;
+    int sigmac;
+    int sigmanewc;
+    int sigmal;
+    int sigmanewl;
+    QString fileNamenew;
 public:
     Mat img;
     DetectorCanny *detector;
@@ -29,9 +34,7 @@ private slots:
 
     void on_pushButton_2_clicked();
 
-    void on_actionOpenFile_triggered();
-
-    void on_actionSaveFile_triggered();
+    void on_pushButton_3_clicked();
 
 private:
     Ui::MainWindow *ui;

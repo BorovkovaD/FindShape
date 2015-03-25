@@ -3,14 +3,6 @@
 
 Function::Function()
 {
-    /*detect(filename);
-    Mat Canny =  detect.start();
-    Mat img;
-    img = cv::imread(filename);
-    lines.img = Canny;
-    lines.img1 = img;
-    lines.start();*/
-
 }
 
 Function::~Function()

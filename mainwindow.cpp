@@ -21,54 +21,108 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    int sigma = ui->spinBox->value();
-    detector = new DetectorCanny(fileName.toStdString());
-    Mat Canny =  detector->start(sigma);
-    Mat tmp = img.clone();
-    lines = new Hough();
-    lines->img = Canny;
-    lines->img1 = tmp;
-    Mat circles = lines->FindCircle();
-    cv::cvtColor(circles, circles, CV_BGR2RGB);
-    QImage image((uchar*)circles.data, circles.cols, circles.rows, circles.step1(),QImage::Format_RGB888);
-    QPixmap pix = QPixmap::fromImage(image);
-    QGraphicsScene *scene = new QGraphicsScene;
-    scene->clear();
-    scene->addPixmap(pix);
-    ui->graphicsView->setScene(scene);
-
+    if (flag == 1 && fileNamenew != fileName)
+    {
+        fileName = fileNamenew;
+        sigmac = ui->spinBox->value();
+        detector = new DetectorCanny(fileNamenew.toStdString());
+        Mat Canny =  detector->start(sigmac);
+        Mat tmp = img.clone();
+        lines = new Hough();
+        lines->img = Canny;
+        lines->img1 = tmp;
+        Mat circles = lines->FindCircle();
+        cv::cvtColor(circles, circles, CV_BGR2RGB);
+        QImage image((uchar*)circles.data, circles.cols, circles.rows, circles.step1(),QImage::Format_RGB888);
+        QPixmap pix = QPixmap::fromImage(image);
+        QGraphicsScene *scene = new QGraphicsScene;
+        scene->clear();
+        scene->addPixmap(pix);
+        ui->graphicsView->setScene(scene);
+    }
+    if (flag == 1 && fileNamenew == fileName && (ui->spinBox->value()) != sigmac)
+    {
+        fileName = fileNamenew;
+        sigmanewc = ui->spinBox->value();
+        sigmac = sigmanewc;
+        detector = new DetectorCanny(fileNamenew.toStdString());
+        Mat Canny =  detector->start(sigmanewc);
+        Mat tmp = img.clone();
+        lines = new Hough();
+        lines->img = Canny;
+        lines->img1 = tmp;
+        Mat circles = lines->FindCircle();
+        cv::cvtColor(circles, circles, CV_BGR2RGB);
+        QImage image((uchar*)circles.data, circles.cols, circles.rows, circles.step1(),QImage::Format_RGB888);
+        QPixmap pix = QPixmap::fromImage(image);
+        QGraphicsScene *scene = new QGraphicsScene;
+        scene->clear();
+        scene->addPixmap(pix);
+        ui->graphicsView->setScene(scene);
+    }
+    if(flag == 0)
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Open the image");
+        msgBox.exec();
+    }
 }
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    int sigma = ui->spinBox->value();
-    detector = new DetectorCanny(fileName.toStdString());
-    Mat Canny =  detector->start(sigma);
-    Mat tmp = img.clone();
-    lines = new Hough();
-    lines->img = Canny;
-    lines->img1 = tmp;
-    Mat triangles = lines->FindTriangle();
-    cv::cvtColor(triangles, triangles, CV_BGR2RGB);
-    QImage image((uchar*)triangles.data, triangles.cols, triangles.rows, triangles.step1(),QImage::Format_RGB888);
-    QPixmap pix = QPixmap::fromImage(image);
-    QGraphicsScene *scene = new QGraphicsScene;
-    scene->clear();
-    scene->addPixmap(pix);
-    ui->graphicsView->setScene(scene);
-
+    if (flag == 1 && fileNamenew != fileName)
+    {
+        fileName = fileNamenew;
+        sigmal = ui->spinBox->value();
+        detector = new DetectorCanny(fileNamenew.toStdString());
+        Mat Canny =  detector->start(sigmal);
+        Mat tmp = img.clone();
+        lines = new Hough();
+        lines->img = Canny;
+        lines->img1 = tmp;
+        Mat line = lines->FindLines();
+        cv::cvtColor(line, line, CV_BGR2RGB);
+        QImage image((uchar*)line.data, line.cols, line.rows, line.step1(),QImage::Format_RGB888);
+        QPixmap pix = QPixmap::fromImage(image);
+        QGraphicsScene *scene = new QGraphicsScene;
+        scene->clear();
+        scene->addPixmap(pix);
+        ui->graphicsView->setScene(scene);
+    }
+    if (flag == 1 && fileNamenew == fileName && (ui->spinBox->value()) != sigmal)
+    {
+        fileName = fileNamenew;
+        sigmanewl = ui->spinBox->value();
+        sigmal = sigmanewl;
+        detector = new DetectorCanny(fileNamenew.toStdString());
+        Mat Canny =  detector->start(sigmanewl);
+        Mat tmp = img.clone();
+        lines = new Hough();
+        lines->img = Canny;
+        lines->img1 = tmp;
+        Mat line = lines->FindLines();
+        cv::cvtColor(line, line, CV_BGR2RGB);
+        QImage image((uchar*)line.data, line.cols, line.rows, line.step1(),QImage::Format_RGB888);
+        QPixmap pix = QPixmap::fromImage(image);
+        QGraphicsScene *scene = new QGraphicsScene;
+        scene->clear();
+        scene->addPixmap(pix);
+        ui->graphicsView->setScene(scene);
+    }
+    if(flag == 0)
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Open the image");
+        msgBox.exec();
+    }
 }
 
-void MainWindow::on_actionOpenFile_triggered()
+void MainWindow::on_pushButton_3_clicked()
 {
-    fileName = (QFileDialog::getOpenFileName(this,
-        tr("Open Image"), "/home", tr("Image Files (*.png)")));//.toLocal8Bit().constData();
-    img = cv::imread(fileName.toStdString());
-    //detector = new DetectorCanny(fileName.toStdString());
-    //Mat Canny =  detector->start(1);
-    //imshow("Canny", Canny);
-    qDebug()<<img.rows;
-    qDebug()<<img.cols;
+    flag = 0;
+    fileNamenew = (QFileDialog::getOpenFileName(this,
+        tr("Open Image"), "/home", tr("Image Files (*.png)")));
+    img = cv::imread(fileNamenew.toStdString());
     if((img.rows<50) || (img.cols<50))
     {
         QMessageBox msgBox;
@@ -96,31 +150,6 @@ void MainWindow::on_actionOpenFile_triggered()
         QGraphicsScene *scene = new QGraphicsScene;
         scene->addPixmap(pix);
         ui->graphicsView->setScene(scene);
+        flag = 1;
     }
-    /*QBrush br(Qt::TexturePattern);
-        br.setTextureImage(image);
-        QPalette plt = ui->widget->palette();
-        plt.setBrush(QPalette::Background, br);
-        ui->widget->setPalette(plt);
-        ui->widget->show();/*
-    /*Mat img, gray;
-    img=imread(fileName.toStdString());
-      cvtColor(img, gray, CV_BGR2GRAY);
-    // smooth it, otherwise a lot of false circles may be detected
-    GaussianBlur( gray, gray, Size(9, 9), 2, 2 );*/
-    /*img = cv::imread(fileName.toStdString());
-    imshow("img", img);
-    lines = new Hough();
-    lines->img = Canny;
-    lines->img1 = img;
-    lines->start();*/
-
-    cvWaitKey(0);
-    cvDestroyAllWindows();
-
-}
-
-void MainWindow::on_actionSaveFile_triggered()
-{
-
 }

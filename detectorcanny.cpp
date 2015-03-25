@@ -13,7 +13,6 @@ DetectorCanny::DetectorCanny(string filename)
 
 DetectorCanny::~DetectorCanny()
 {
-    //удалить картинку
 }
 
 Mat DetectorCanny::start(int sigma)
@@ -21,17 +20,18 @@ Mat DetectorCanny::start(int sigma)
     Mat img_gray (img.rows, img.cols, CV_8UC1, Scalar(0));
     RGB2GRAY(img, img_gray);
     Mat img_gaus (img_gray.rows, img_gray.cols, CV_8UC1, Scalar(0));
-    GaussianFilterOperator (sigma, img_gray, img_gaus);
+    double sig = sigma/10;
+    GaussianFilterOperator (sig, img_gray, img_gaus);
     Mat img_sobel (img_gaus.rows, img_gaus.cols, CV_8UC1, Scalar(0));
     SobelOperator(img_gaus, img_sobel);
     Mat img_double (img_sobel.rows, img_sobel.cols, CV_8UC1, Scalar(0));
-    DoubleThresholding(0.2,0.8,img_sobel, img_double);
+    DoubleThresholding(0.3,0.8,img_sobel, img_double);
     Mat img_canny (img_double.rows, img_double.cols, CV_8UC1, Scalar(0));
     BlobAnalysis(img_double, img_canny);
     return img_canny;
 }
 
-void DetectorCanny::GaussianFilterOperator (float sigma, Mat input, Mat& output)
+void DetectorCanny::GaussianFilterOperator (double& sigma, Mat& input, Mat& output)
 {
     assert( input.channels() == output.channels() );
     assert (sigma >= 0);
@@ -150,9 +150,12 @@ void DetectorCanny::SobelOperator(Mat& input, Mat& output)
     for(i = 1; i<height-1; i++)
         for(j = 1; j < width-1; j++)
         {
+                /* ядра свёрток, вычисляющие первую производную по направлениям (изменения интенсивности в направлениях)*/
                 Gx = (pixelPtrIN[(i+1)*width + (j-1)]+2*pixelPtrIN[(i+1)*width + j]+pixelPtrIN[(i+1)*width + (j+1)])-(pixelPtrIN[(i-1)*width + (j-1)]+2*pixelPtrIN[(i-1)*width + j]+pixelPtrIN[(i-1)*width + (j+1)]);
                 Gy = (pixelPtrIN[(i-1)*width + (j+1)]+2*pixelPtrIN[i*width + (j+1)]+pixelPtrIN[(i+1)*width + (j+1)])-(pixelPtrIN[(i-1)*width + (j-1)]+2*pixelPtrIN[i*width + (j-1)]+pixelPtrIN[(i+1)*width + (j-1)]);
+                /*размер этого изменения*/
                 Gradient[i][j] = sqrt(Gx*Gx+Gy*Gy);
+                /*направление градиента */
                 double angle = atan2(Gy,Gx);
                 /* перевод угла в пространство [0, PI] */
                 Angle[i][j] = angle < 0 ? angle + CV_PI : angle;

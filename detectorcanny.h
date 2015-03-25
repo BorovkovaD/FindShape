@@ -15,7 +15,7 @@
 using namespace cv;
 using namespace std;
 
-#define maxWin  100 /**< максимальный размер окна*/
+#define maxWin  50 /**< максимальный размер окна*/
 #define maxDim  4096 /**< максимальный линейный размер рисунка*/
 
 /**
@@ -25,7 +25,7 @@ using namespace std;
 class DetectorCanny
 {
     /**< структура для хранения пикселя*/
-    int N; /**< ???*/
+    int N;
     float window[2*maxWin]; /**< окно */
     int i , j , k , l, height, width; /**< переменные циклов и вспомогательные переменные */
     float sum; /**< сумма элементов окна , для нормализации */
@@ -41,7 +41,7 @@ private:
       * @param input – ссылка на исходное изображение
       * @param output - ссылка на обработанное изображение
       */
-    void GaussianFilterOperator (float sigma, Mat input, Mat& output);
+    void GaussianFilterOperator (double &sigma, Mat &input, Mat& output);
 
     /**
       * @brief Метод, переводящий трёхканальное изображение в одноканальное
@@ -67,7 +67,7 @@ private:
     void DoubleThresholding(double low_pr, double high_pr, Mat& input, Mat& output);
 
     /**
-      * @brief Метод, описывающий оператор Собеля
+      * @brief Метод, трассировка области неоднозначности
       * @param input – ссылка на исходное изображение
       * @param output - ссылка на обработанное изображение
       */
